@@ -53,11 +53,11 @@ export const TopBar = ({ activePage, onNewQuery, transportMode, onTransportModeC
     }}>
 
       {/* Page title */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-        <h1 style={{ fontSize: 15, fontWeight: 700, color: '#0a1628', letterSpacing: '-0.3px', whiteSpace: 'nowrap', margin: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 1, minWidth: 0 }}>
+        <h1 style={{ fontSize: 15, fontWeight: 700, color: '#0a1628', letterSpacing: '-0.3px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', margin: 0 }}>
           {pageTitle}
         </h1>
-        <span style={{ fontSize: 10, background: '#f1f5f9', color: '#64748b', padding: '2px 8px', borderRadius: 10, fontWeight: 600 }}>
+        <span style={{ fontSize: 10, background: '#f1f5f9', color: '#64748b', padding: '2px 8px', borderRadius: 10, fontWeight: 600, flexShrink: 0 }}>
           Demo
         </span>
       </div>
@@ -103,7 +103,7 @@ export const TopBar = ({ activePage, onNewQuery, transportMode, onTransportModeC
       <div style={{ flex: 1 }} />
 
       {/* Search */}
-      <div style={{ position: 'relative', width: 210, flexShrink: 0 }}>
+      <div style={{ position: 'relative', width: '100%', maxWidth: 210, minWidth: 80, flex: 1 }}>
         <Search size={13} style={{ position: 'absolute', left: 9, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
         <input className="form-input" placeholder="Search queries, customers..." style={{ paddingLeft: 28, width: '100%', fontSize: 12 }} />
       </div>

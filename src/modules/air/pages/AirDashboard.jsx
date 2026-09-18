@@ -82,7 +82,7 @@ export const AirDashboard = () => {
       </div>
 
       {/* KPI Row 1 */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 14 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 14, marginBottom: 14 }}>
         <KPICard
           title="Total Queries"
           value={kpis.totalQueries}
@@ -111,7 +111,7 @@ export const AirDashboard = () => {
       </div>
 
       {/* KPI Row 2 */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 24 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 14, marginBottom: 24 }}>
         <KPICard
           title="Rates Confirmed"
           value={kpis.ratesConfirmed}
@@ -139,7 +139,7 @@ export const AirDashboard = () => {
       </div>
 
       {/* Charts Row */}
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 16, marginBottom: 24 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16, marginBottom: 24 }}>
         {/* Query Volume Trend */}
         <div className="card" style={{ padding: '20px' }}>
           <h3 style={{ fontWeight: 700, fontSize: 14, color: '#0a1628', marginBottom: 16 }}>Query Volume Trend</h3>
@@ -197,7 +197,7 @@ export const AirDashboard = () => {
       </div>
 
       {/* Tables & Deep Analytics */}
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16, marginBottom: 24 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16, marginBottom: 24 }}>
         
         {/* Pending Queries Table */}
         <div className="card" style={{ overflow: 'hidden' }}>
