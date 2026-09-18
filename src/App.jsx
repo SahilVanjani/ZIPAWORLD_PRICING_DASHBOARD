@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { TopBar } from './components/TopBar';
 import { Dashboard } from './pages/Dashboard';
@@ -17,6 +17,8 @@ import { AirCarrierAnalysis } from './modules/air/pages/AirCarrierAnalysis';
 import { AirAnalytics } from './modules/air/pages/AirAnalytics';
 import { AirSLAMonitor } from './modules/air/pages/AirSLAMonitor';
 import { AirReports } from './modules/air/pages/AirReports';
+import { useRole } from './context/RoleContext';
+import { AccessRestricted } from './components/AccessRestricted';
 
 // New Query Modal (mock only)
 const NewQueryModal = ({ onClose }) =>
@@ -108,11 +110,24 @@ function App() {
   const [initialStatus, setInitialStatus] = useState('ALL');
   const [showNewQuery, setShowNewQuery] = useState(false);
   const [transportMode, setTransportMode] = useState('OCEAN');
+  
+  const { currentRole } = useRole();
+
+  // If role changes and they don't have access to current mode, redirect them
+  useEffect(() => {
+    if (transportMode === 'AIR' && !currentRole.permissions.air) {
+      setTransportMode('OCEAN');
+      setActivePage('dashboard');
+    } else if (transportMode === 'OCEAN' && !currentRole.permissions.ocean) {
+      setTransportMode('AIR');
+      setActivePage('dashboard');
+    }
+  }, [currentRole, transportMode]);
 
   const handleNavigate = (page, status) => {
     setActivePage(page);
-    if (status) setInitialStatus(status);else
-    setInitialStatus('ALL');
+    if (status) setInitialStatus(status);
+    else setInitialStatus('ALL');
   };
 
   const renderPage = () => {
@@ -121,6 +136,12 @@ function App() {
     }
 
     if (transportMode === 'AIR') {
+      if (!currentRole.permissions.air) {
+        return <AccessRestricted requiredModule="Air" onReturn={() => {
+          setTransportMode('OCEAN');
+          setActivePage('dashboard');
+        }} />;
+      }
       switch (activePage) {
         case 'dashboard': return <AirDashboard />;
         case 'queries': return <AirPricingQueries />;
@@ -134,16 +155,24 @@ function App() {
       }
     }
 
-    switch (activePage) {
-      case 'dashboard':return <Dashboard onNavigate={handleNavigate} />;
-      case 'queries':return <PricingQueries initialStatus={initialStatus} />;
-      case 'rate-intel':return <RateIntelligence />;
-      case 'rate-master':return <RateMaster />;
-      case 'carriers':return <CarrierAnalysis />;
-      case 'analytics':return <Analytics />;
-      case 'sla':return <SLAMonitor />;
-      case 'reports':return <Reports />;
-      default:return <Dashboard onNavigate={handleNavigate} />;
+    if (transportMode === 'OCEAN') {
+      if (!currentRole.permissions.ocean) {
+        return <AccessRestricted requiredModule="Ocean" onReturn={() => {
+          setTransportMode('AIR');
+          setActivePage('dashboard');
+        }} />;
+      }
+      switch (activePage) {
+        case 'dashboard':return <Dashboard onNavigate={handleNavigate} />;
+        case 'queries':return <PricingQueries initialStatus={initialStatus} />;
+        case 'rate-intel':return <RateIntelligence />;
+        case 'rate-master':return <RateMaster />;
+        case 'carriers':return <CarrierAnalysis />;
+        case 'analytics':return <Analytics />;
+        case 'sla':return <SLAMonitor />;
+        case 'reports':return <Reports />;
+        default:return <Dashboard onNavigate={handleNavigate} />;
+      }
     }
   };
 

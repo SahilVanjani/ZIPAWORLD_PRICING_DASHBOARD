@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Bell, Search, User, Plus, Calendar, ChevronDown } from 'lucide-react';
 import { NotificationPanel } from './NotificationPanel';
 import { mockNotifications } from '../data/mockData';
+import { useRole } from '../context/RoleContext';
+import { ROLES } from '../config/roles';
 
 const pageTitles = {
   dashboard: 'Pricing Control Tower',
@@ -20,13 +22,19 @@ const MODE_ICONS = { AIR: '✈', OCEAN: '⚓', COURIER: '📦', ROAD: '🚛', OT
 
 export const TopBar = ({ activePage, onNewQuery, transportMode, onTransportModeChange }) => {
   const [showNotif, setShowNotif] = useState(false);
+  const [showRoleSwitcher, setShowRoleSwitcher] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
   const [dateRange] = useState('06 Sep – 12 Sep 2026');
   const notifRef = useRef(null);
+  const roleRef = useRef(null);
   const unread = mockNotifications.filter((n) => !n.read).length;
+  
+  const { currentRole, changeRole } = useRole();
 
   useEffect(() => {
     const handler = (e) => {
       if (notifRef.current && !notifRef.current.contains(e.target)) setShowNotif(false);
+      if (roleRef.current && !roleRef.current.contains(e.target)) setShowRoleSwitcher(false);
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
@@ -59,24 +67,36 @@ export const TopBar = ({ activePage, onNewQuery, transportMode, onTransportModeC
 
       {/* Transport Mode Pill Selector */}
       <div style={{ display: 'flex', background: '#f1f5f9', borderRadius: 8, padding: 3, gap: 1, flexShrink: 0 }}>
-        {TRANSPORT_MODES.map((mode) => (
-          <button
-            key={mode}
-            onClick={() => onTransportModeChange(mode)}
-            title={mode}
-            style={{
-              background: transportMode === mode ? 'white' : 'transparent',
-              color: transportMode === mode ? '#0a1628' : '#94a3b8',
-              fontWeight: transportMode === mode ? 700 : 500,
-              boxShadow: transportMode === mode ? '0 1px 3px rgba(0,0,0,0.12)' : 'none',
-              border: 'none', padding: '5px 11px', borderRadius: 6,
-              fontSize: 11, cursor: 'pointer', transition: 'all 0.2s',
-              display: 'flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap',
-            }}>
-            <span style={{ fontSize: 12 }}>{MODE_ICONS[mode]}</span>
-            {mode}
-          </button>
-        ))}
+        {TRANSPORT_MODES.map((mode) => {
+          const isAir = mode === 'AIR';
+          const isOcean = mode === 'OCEAN';
+          
+          let isDisabled = false;
+          if (isAir && !currentRole.permissions.air) isDisabled = true;
+          if (isOcean && !currentRole.permissions.ocean) isDisabled = true;
+
+          return (
+            <button
+              key={mode}
+              onClick={() => {
+                if (!isDisabled) onTransportModeChange(mode);
+              }}
+              title={isDisabled ? 'Access Restricted' : mode}
+              style={{
+                background: transportMode === mode ? 'white' : 'transparent',
+                color: transportMode === mode ? '#0a1628' : (isDisabled ? '#cbd5e1' : '#94a3b8'),
+                fontWeight: transportMode === mode ? 700 : 500,
+                boxShadow: transportMode === mode ? '0 1px 3px rgba(0,0,0,0.12)' : 'none',
+                border: 'none', padding: '5px 11px', borderRadius: 6,
+                fontSize: 11, cursor: isDisabled ? 'not-allowed' : 'pointer', transition: 'all 0.2s',
+                display: 'flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap',
+                opacity: isDisabled ? 0.6 : 1
+              }}>
+              <span style={{ fontSize: 12 }}>{MODE_ICONS[mode]}</span>
+              {mode}
+            </button>
+          );
+        })}
       </div>
 
       {/* Flex spacer */}
@@ -115,27 +135,100 @@ export const TopBar = ({ activePage, onNewQuery, transportMode, onTransportModeC
         {showNotif && <NotificationPanel onClose={() => setShowNotif(false)} />}
       </div>
 
-      {/* User avatar */}
-      <button style={{
-        display: 'flex', alignItems: 'center', gap: 8,
-        border: '1px solid #e2e8f0', borderRadius: 8, padding: '6px 10px',
-        background: 'white', cursor: 'pointer', flexShrink: 0
-      }}>
-        <div style={{ width: 26, height: 26, borderRadius: '50%', background: '#0a1628', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <User size={14} color="white" />
-        </div>
-        <div style={{ textAlign: 'left' }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: '#0a1628' }}>Pricing Team</div>
-          <div style={{ fontSize: 10, color: '#94a3b8' }}>Manager</div>
-        </div>
-        <ChevronDown size={12} color="#94a3b8" />
-      </button>
+      {/* User avatar & Role Switcher */}
+      <div ref={roleRef} style={{ position: 'relative', flexShrink: 0 }}>
+        <button 
+          onClick={() => setShowRoleSwitcher(!showRoleSwitcher)}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 8,
+            border: '1px solid #e2e8f0', borderRadius: 8, padding: '6px 10px',
+            background: 'white', cursor: 'pointer', flexShrink: 0,
+            boxShadow: showRoleSwitcher ? '0 0 0 2px rgba(232,25,44,0.1)' : 'none'
+          }}>
+          <div style={{ width: 26, height: 26, borderRadius: '50%', background: '#0a1628', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ color: 'white', fontSize: 12, fontWeight: 700 }}>
+              {currentRole.user.charAt(0)}
+            </span>
+          </div>
+          <div style={{ textAlign: 'left' }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: '#0a1628' }}>{currentRole.name}</div>
+            <div style={{ fontSize: 10, color: '#94a3b8' }}>{currentRole.user.split(' ')[0]}</div>
+          </div>
+          <ChevronDown size={12} color="#94a3b8" />
+        </button>
+
+        {showRoleSwitcher && (
+          <div style={{
+            position: 'absolute', top: '100%', right: 0, marginTop: 8,
+            width: 260, background: 'white', borderRadius: 12,
+            boxShadow: '0 10px 40px rgba(0,0,0,0.15)', border: '1px solid #e2e8f0',
+            zIndex: 100, overflow: 'hidden'
+          }}>
+            <div style={{ padding: '12px 16px', borderBottom: '1px solid #f1f5f9', background: '#f8fafc' }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: '#64748b', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+                SWITCH PERSONA ROLE
+              </div>
+            </div>
+            <div style={{ padding: 8 }}>
+              {Object.values(ROLES).map((role) => {
+                const isSelected = currentRole.id === role.id;
+                return (
+                  <button
+                    key={role.id}
+                    onClick={() => {
+                      changeRole(role.id);
+                      setShowRoleSwitcher(false);
+                      setToastMessage(`Switched to ${role.user} — ${role.name}`);
+                      setTimeout(() => setToastMessage(''), 3000);
+                    }}
+                    style={{
+                      width: '100%', display: 'flex', flexDirection: 'column',
+                      padding: '10px 12px', border: isSelected ? '1px solid #fca5a5' : '1px solid transparent',
+                      background: isSelected ? '#fef2f2' : 'transparent',
+                      borderRadius: 8, cursor: 'pointer', textAlign: 'left',
+                      marginBottom: 4, position: 'relative', transition: 'all 0.15s'
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                      <div style={{ fontSize: 13, fontWeight: isSelected ? 700 : 600, color: isSelected ? '#b91c1c' : '#0a1628' }}>
+                        {role.user}
+                      </div>
+                      {isSelected && <span style={{ color: '#dc2626', fontSize: 14 }}>✓</span>}
+                    </div>
+                    <div style={{ fontSize: 11, color: isSelected ? '#ef4444' : '#64748b', marginTop: 2 }}>
+                      {role.name}
+                    </div>
+                    <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 4 }}>
+                      {role.access}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* New Query CTA */}
       <button className="btn-primary" onClick={onNewQuery} style={{ flexShrink: 0 }}>
         <Plus size={14} />
         New Query
       </button>
+
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div style={{
+          position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
+          background: '#0a1628', color: 'white', padding: '12px 24px',
+          borderRadius: 8, boxShadow: '0 10px 40px rgba(0,0,0,0.2)',
+          fontSize: 14, fontWeight: 500, zIndex: 1000,
+          display: 'flex', alignItems: 'center', gap: 8,
+          animation: 'fadeInUp 0.3s ease-out forwards'
+        }}>
+          <span style={{ color: '#4ade80' }}>✓</span>
+          {toastMessage}
+        </div>
+      )}
     </header>
   );
 };
